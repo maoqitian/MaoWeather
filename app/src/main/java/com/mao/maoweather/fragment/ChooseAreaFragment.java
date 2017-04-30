@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -68,7 +69,7 @@ public class ChooseAreaFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view=View.inflate(getContext(), R.layout.choose_area,container);
+        View view=inflater.inflate(R.layout.choose_area,container,false);
         tv_title= (TextView) view.findViewById(R.id.tv_title);
         bt_back= (Button) view.findViewById(R.id.bt_back);
         list_view= (ListView) view.findViewById(R.id.list_view);
@@ -102,12 +103,13 @@ public class ChooseAreaFragment extends Fragment {
                 }
             }
         });
+        queryProvinces();
     }
 
     /**
      * 不管查询哪一级的数据，优先查询数据库，如果数据库上没有数据，才去请求服务器获取数据
      */
-
+    //获取城市信息
     private void queryProvinces() {
         tv_title.setText("中国");
         bt_back.setVisibility(View.GONE);
@@ -132,6 +134,7 @@ public class ChooseAreaFragment extends Fragment {
      */
     private void queryFromServer(String serverUrl, final String type) {
           showProgressDialog();
+        Log.w("毛麒添","开始请求数据");
         HttpUtils.sendOkHttpRquest(serverUrl, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -147,7 +150,8 @@ public class ChooseAreaFragment extends Fragment {
 
             @Override
             public void onResponse(Call call, Response response) throws IOException {
-                String responseStr=response.body().toString();
+                String responseStr=response.body().string();
+                Log.w("毛麒添",responseStr);
                 boolean result=false;//是否请求成功标识
                 if("province".equals(type)){
                     result=MyUtils.handleProvinceResponse(responseStr);
@@ -155,6 +159,7 @@ public class ChooseAreaFragment extends Fragment {
                     result=MyUtils.handleCityResponse(responseStr,selectProvince.getId());
                 }else if("county".equals(type)){
                     result=MyUtils.handleCountyResponse(responseStr,selectCity.getId());
+                    Log.w("result", String.valueOf(result));
                 }
                 if(result){//如果数据解析成功
                  getActivity().runOnUiThread(new Runnable() {//运行在主线程更新UI。显示数据
@@ -190,9 +195,9 @@ public class ChooseAreaFragment extends Fragment {
         progressDialog.show();
     }
 
-
-    private void queryCounties() {
-        tv_title.setText(selectCity.getCityName());
+    //获取城市信息
+    private void queryCities() {
+        tv_title.setText(selectProvince.getProvinceName());
         bt_back.setVisibility(View.VISIBLE);
         //获取数据库中的数据
         cityList=DataSupport.where("provinceid = ?",String.valueOf(selectProvince.getId())).find(City.class);
@@ -207,26 +212,35 @@ public class ChooseAreaFragment extends Fragment {
         }else {//没有数据集则请求网络
             int provinceCode=selectProvince.getProvinceCode();
             String address=SERVER_URL + provinceCode;//请求地址
-            queryFromServer(address,"county");
+            Log.w("address",address+"");
+            queryFromServer(address,"city");
         }
 
     }
-
-    private void queryCities() {
+    //获取县信息
+    private void queryCounties() {
         tv_title.setText(selectProvince.getProvinceName());
+        Log.w("毛麒添","查询所有县");
         bt_back.setVisibility(View.VISIBLE);
-        provinceList= DataSupport.findAll(Province.class);//获取数据库中的数据
+        countyList= DataSupport.where("cityid = ?",String.valueOf(selectCity.getId())).find(County.class);//获取数据库中的数据
         if(provinceList.size()>0){//如果数据库中有数据
+            Log.w("毛麒添","查询所有县2222");
             dataList.clear();
-            for (Province province: provinceList) {
-                dataList.add(province.getProvinceName());
+            for (County county: countyList) {
+                dataList.add(county.getCountyName());
             }
             adapter.notifyDataSetChanged();
             list_view.setSelection(0);
-            currentLevel=LEVEL_PROVINCE;
+            currentLevel=LEVEL_COUNTY;
         }else {//没有数据集则请求网络
-            queryFromServer(SERVER_URL,"city");
+            Log.w("毛麒添","查询所有县2222");
+            int provinceCode=selectProvince.getProvinceCode();
+            Log.w("provinceCode",provinceCode+"");
+            int cityCode=selectCity.getCityCode();
+            Log.w("cityCode",cityCode+"");
+            String address =SERVER_URL+provinceCode+ "/"+cityCode;
+            Log.w("address",address+"");
+            queryFromServer(address,"county");
         }
     }
-
 }
