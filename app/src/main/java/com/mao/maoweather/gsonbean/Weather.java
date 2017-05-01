@@ -6,7 +6,7 @@ import java.util.List;
 
 /**
  * Created by 毛麒添 on 2017/5/1 0001.
- * 天气总体实体类
+ * 天气实体类，结合所有的bean
  */
 
 public class Weather {
