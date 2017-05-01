@@ -223,8 +223,8 @@ public class ChooseAreaFragment extends Fragment {
         Log.w("毛麒添","查询所有县");
         bt_back.setVisibility(View.VISIBLE);
         countyList= DataSupport.where("cityid = ?",String.valueOf(selectCity.getId())).find(County.class);//获取数据库中的数据
-        if(provinceList.size()>0){//如果数据库中有数据
-            Log.w("毛麒添","查询所有县2222");
+        if(countyList.size()>0){//如果数据库中有数据
+            Log.w("毛麒添","查询所有县1111");
             dataList.clear();
             for (County county: countyList) {
                 dataList.add(county.getCountyName());
