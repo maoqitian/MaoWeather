@@ -1,9 +1,13 @@
 package com.mao.maoweather.util;
 
 import android.text.TextUtils;
+
+import com.google.gson.Gson;
 import com.mao.maoweather.db.City;
 import com.mao.maoweather.db.County;
 import com.mao.maoweather.db.Province;
+import com.mao.maoweather.gsonbean.Weather;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -91,5 +95,26 @@ public class MyUtils {
             }
         }
         return false;
+    }
+
+    /**
+     * 处理天气的详细信息
+     * @param response 解析数据
+     * @return 返回解析好的Weather实体
+     */
+    public static Weather handleWeatherResponse(String response){
+
+        if(!TextUtils.isEmpty(response)){//如果获取的JSON数据对象不为空
+            try {
+                JSONObject weatherObject=new JSONObject(response);
+                JSONArray jsonArray=weatherObject.getJSONArray("HeWeather");
+                String weatherContent = jsonArray.getJSONArray(0).toString();
+                //使用Gson 进行解析
+                return  new Gson().fromJson(weatherContent,Weather.class);
+            } catch (JSONException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
     }
 }
