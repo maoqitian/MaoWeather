@@ -1,6 +1,7 @@
 package com.mao.maoweather.fragment;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -16,6 +17,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.mao.maoweather.R;
+import com.mao.maoweather.WeatherActivity;
 import com.mao.maoweather.db.City;
 import com.mao.maoweather.db.County;
 import com.mao.maoweather.db.Province;
@@ -90,6 +92,13 @@ public class ChooseAreaFragment extends Fragment {
                 }else if(currentLevel==LEVEL_CITY){//查询县级的信息
                     selectCity= cityList.get(position);
                     queryCounties();//查询所有县
+                }else if (currentLevel==LEVEL_COUNTY){
+                    //跳转天气详情页逻辑
+                    String weatherID = countyList.get(position).getWeatherID();
+                    Intent intent=new Intent(getActivity(), WeatherActivity.class);
+                    intent.putExtra("weather_id",weatherID);
+                    startActivity(intent);
+                    getActivity().finish();
                 }
             }
         });

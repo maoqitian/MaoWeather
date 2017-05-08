@@ -108,7 +108,7 @@ public class MyUtils {
             try {
                 JSONObject weatherObject=new JSONObject(response);
                 JSONArray jsonArray=weatherObject.getJSONArray("HeWeather");
-                String weatherContent = jsonArray.getJSONArray(0).toString();
+                String weatherContent = jsonArray.getJSONObject(0).toString();
                 //使用Gson 进行解析
                 return  new Gson().fromJson(weatherContent,Weather.class);
             } catch (JSONException e) {
