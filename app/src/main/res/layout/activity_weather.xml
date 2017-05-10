@@ -2,7 +2,7 @@
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#00b0ff"
+    android:background="@color/colorBlue"
     >
     <ImageView
         android:id="@+id/iv_bing_pic"
@@ -13,6 +13,16 @@
     <!--显示天气信息界面-->
     <!--隐滚动条 android:scrollbars="none" -->
     <!--滑动到边界无阴影效果 android:overScrollMode="never"-->
+    <android.support.v4.widget.DrawerLayout
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+
+    <android.support.v4.widget.SwipeRefreshLayout
+        android:id="@+id/swipe_refresh"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
     <ScrollView
         android:id="@+id/sv_weather_layout"
         android:layout_width="match_parent"
@@ -33,4 +43,13 @@
             <include layout="@layout/suggestion" />
         </LinearLayout>
     </ScrollView>
+    </android.support.v4.widget.SwipeRefreshLayout>
+        <fragment
+            android:id="@+id/choose_area_fragment"
+            android:name="com.mao.maoweather.fragment.ChooseAreaFragment"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_gravity="start"
+            />
+    </android.support.v4.widget.DrawerLayout>
 </FrameLayout>

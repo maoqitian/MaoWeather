@@ -16,6 +16,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.mao.maoweather.MainActivity;
 import com.mao.maoweather.R;
 import com.mao.maoweather.WeatherActivity;
 import com.mao.maoweather.db.City;
@@ -95,10 +96,17 @@ public class ChooseAreaFragment extends Fragment {
                 }else if (currentLevel==LEVEL_COUNTY){
                     //跳转天气详情页逻辑
                     String weatherID = countyList.get(position).getWeatherID();
-                    Intent intent=new Intent(getActivity(), WeatherActivity.class);
-                    intent.putExtra("weather_id",weatherID);
-                    startActivity(intent);
-                    getActivity().finish();
+                    if(getActivity() instanceof MainActivity){//如果是主界面
+                        Intent intent=new Intent(getActivity(), WeatherActivity.class);
+                        intent.putExtra("weather_id",weatherID);
+                        startActivity(intent);
+                        getActivity().finish();
+                    }else if(getActivity() instanceof WeatherActivity){//如果是显示天气页面
+                        WeatherActivity weatherActivity= (WeatherActivity) getActivity();
+                        weatherActivity.drawer_layout.closeDrawers();//关闭侧边栏
+                        weatherActivity.swipe_refresh.setRefreshing(true);
+                        weatherActivity.requestWeatherServer(weatherID);
+                    }
                 }
             }
         });

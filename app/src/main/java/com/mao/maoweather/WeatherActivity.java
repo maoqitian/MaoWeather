@@ -6,8 +6,12 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -54,6 +58,11 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView tv_suggestion_sport;
 
     private ImageView iv_bing_pic;
+
+    public SwipeRefreshLayout swipe_refresh;//下拉刷新
+
+    public DrawerLayout drawer_layout;//侧边栏
+    private Button bt_nav;//侧边栏按钮
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -80,6 +89,9 @@ public class WeatherActivity extends AppCompatActivity {
         SharedPreferences sp= PreferenceManager.getDefaultSharedPreferences(this);
         String bing_pic = sp.getString("bing_pic", null);
         String weatherStr = sp.getString("weather", null);
+
+        final String weatherId;
+
         if(bing_pic!=null){
             Glide.with(this).load(bing_pic).into(iv_bing_pic);//有缓存直接显示图片
         }else {
@@ -88,15 +100,30 @@ public class WeatherActivity extends AppCompatActivity {
         if(weatherStr!=null){
             //直接解析
             Weather weather = MyUtils.handleWeatherResponse(weatherStr);
+            weatherId=weather.basic.weatherId;
             //显示天气信息
             ShowWeatherInfo(weather);
         }else {
             //请求服务器获取数据
-            String weatherId = getIntent().getStringExtra("weather_id");
+            weatherId = getIntent().getStringExtra("weather_id");
             sv_weather_layout.setVisibility(View.INVISIBLE);
             //从服务器获取数据
             requestWeatherServer(weatherId);
         }
+        //下拉刷新
+        swipe_refresh.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                requestWeatherServer(weatherId);
+            }
+        });
+        //点击按钮呼出侧边栏
+        bt_nav.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawer_layout.openDrawer(GravityCompat.START);
+            }
+        });
 
     }
 
@@ -133,7 +160,7 @@ public class WeatherActivity extends AppCompatActivity {
     }
 
     //请求服务器获取天气数据
-    private void requestWeatherServer(String weatherId) {
+    public void requestWeatherServer(String weatherId) {
         //请求地址
         String URL=WEATHER_SERVER_URL+weatherId+WEATHER_SERVER_KEY;
         HttpUtils.sendOkHttpRquest(URL, new Callback() {
@@ -143,6 +170,7 @@ public class WeatherActivity extends AppCompatActivity {
                      @Override
                      public void run() {
                          Toast.makeText(getApplicationContext(),"获取天气信息失败",Toast.LENGTH_SHORT).show();
+                         swipe_refresh.setRefreshing(false);
                      }
                  });
             }
@@ -161,7 +189,10 @@ public class WeatherActivity extends AppCompatActivity {
                             editor.putString("weather",responseText);
                             editor.apply();
                             ShowWeatherInfo(weather);
+                        }else {
+                            Toast.makeText(getApplicationContext(),"获取天气信息失败",Toast.LENGTH_SHORT).show();
                         }
+                        swipe_refresh.setRefreshing(false);
                     }
                 });
             }
@@ -212,5 +243,8 @@ public class WeatherActivity extends AppCompatActivity {
         tv_suggestion_carwash= (TextView) findViewById(R.id.tv_suggestion_carwash);
         tv_suggestion_sport= (TextView) findViewById(R.id.tv_suggestion_sport);
         iv_bing_pic= (ImageView) findViewById(R.id.iv_bing_pic);
+        swipe_refresh= (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        drawer_layout= (DrawerLayout) findViewById(R.id.drawer_layout);
+        bt_nav= (Button) findViewById(R.id.bt_nav);
     }
 }
