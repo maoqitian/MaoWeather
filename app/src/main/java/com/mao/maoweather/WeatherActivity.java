@@ -1,5 +1,6 @@
 package com.mao.maoweather;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Build;
@@ -21,6 +22,7 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.mao.maoweather.gsonbean.Forecast;
 import com.mao.maoweather.gsonbean.Weather;
+import com.mao.maoweather.service.AutoUpdateService;
 import com.mao.maoweather.util.HttpUtils;
 import com.mao.maoweather.util.MyUtils;
 
@@ -202,31 +204,38 @@ public class WeatherActivity extends AppCompatActivity {
 
     //显示Weather实体类中的天气信息
     private void ShowWeatherInfo(Weather weather) {
-        tv_title_city.setText(weather.basic.cityName);
-        tv_title_update_time.setText(weather.basic.update.updateTime.split(" ")[1]);
-        tv_degree_text.setText(weather.now.temperature+"℃");
-        tv_weather_info.setText(weather.now.more.info);
-        ll_forecast_layout.removeAllViews();
-        for (Forecast forecast:weather.forecastList) {
-            View view=View.inflate(getApplicationContext(),R.layout.forecast_item,null);
-            TextView tv_forecast_date_text= (TextView) view.findViewById(R.id.tv_forecast_date_text);
-            TextView tv_info_text= (TextView) view.findViewById(R.id.tv_info_text);
-            TextView tv_max_text= (TextView) view.findViewById(R.id.tv_max_text);
-            TextView tv_min_text= (TextView) view.findViewById(R.id.tv_min_text);
-            tv_forecast_date_text.setText(forecast.date);
-            tv_info_text.setText(forecast.more.info);
-            tv_max_text.setText(forecast.temperature.max);
-            tv_min_text.setText(forecast.temperature.min);
-            ll_forecast_layout.addView(view);
+        if(weather!=null&&"ok".equals(weather.status)){
+            tv_title_city.setText(weather.basic.cityName);
+            tv_title_update_time.setText(weather.basic.update.updateTime.split(" ")[1]);
+            tv_degree_text.setText(weather.now.temperature+"℃");
+            tv_weather_info.setText(weather.now.more.info);
+            ll_forecast_layout.removeAllViews();
+            for (Forecast forecast:weather.forecastList) {
+                View view=View.inflate(getApplicationContext(),R.layout.forecast_item,null);
+                TextView tv_forecast_date_text= (TextView) view.findViewById(R.id.tv_forecast_date_text);
+                TextView tv_info_text= (TextView) view.findViewById(R.id.tv_info_text);
+                TextView tv_max_text= (TextView) view.findViewById(R.id.tv_max_text);
+                TextView tv_min_text= (TextView) view.findViewById(R.id.tv_min_text);
+                tv_forecast_date_text.setText(forecast.date);
+                tv_info_text.setText(forecast.more.info);
+                tv_max_text.setText(forecast.temperature.max+"℃");
+                tv_min_text.setText(forecast.temperature.min);
+                ll_forecast_layout.addView(view);
+            }
+            if(weather.aqi!=null){
+                tv_aqi_text.setText(weather.aqi.city.aqi);
+                tv_pm25_text.setText(weather.aqi.city.pm25);
+            }
+            tv_suggestion_comfort.setText("舒适度："+weather.suggestion.comfort.info);
+            tv_suggestion_carwash.setText("洗车指数："+weather.suggestion.carWash.info);
+            tv_suggestion_sport.setText("运动建议："+weather.suggestion.sport.info);
+            ll_forecast_layout.setVisibility(View.VISIBLE);
+            //开启自动更新服务
+            Intent intent=new Intent(this, AutoUpdateService.class);
+            startService(intent);
+        }else {
+            Toast.makeText(getApplicationContext(),"获取天气信息失败",Toast.LENGTH_SHORT).show();
         }
-        if(weather.aqi!=null){
-            tv_aqi_text.setText(weather.aqi.city.aqi);
-            tv_pm25_text.setText(weather.aqi.city.pm25);
-        }
-        tv_suggestion_comfort.setText("舒适度："+weather.suggestion.comfort.info);
-        tv_suggestion_carwash.setText("洗车指数："+weather.suggestion.carWash.info);
-        tv_suggestion_sport.setText("运动建议："+weather.suggestion.sport.info);
-        ll_forecast_layout.setVisibility(View.VISIBLE);
     }
 
     //初始化各种控件
@@ -244,6 +253,7 @@ public class WeatherActivity extends AppCompatActivity {
         tv_suggestion_sport= (TextView) findViewById(R.id.tv_suggestion_sport);
         iv_bing_pic= (ImageView) findViewById(R.id.iv_bing_pic);
         swipe_refresh= (SwipeRefreshLayout) findViewById(R.id.swipe_refresh);
+        swipe_refresh.setColorSchemeColors(getResources().getColor(R.color.colorBlue));
         drawer_layout= (DrawerLayout) findViewById(R.id.drawer_layout);
         bt_nav= (Button) findViewById(R.id.bt_nav);
     }
