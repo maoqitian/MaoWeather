@@ -1,16 +1,20 @@
 package com.mao.maoweather;
 
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bumptech.glide.Glide;
 import com.mao.maoweather.gsonbean.Forecast;
 import com.mao.maoweather.gsonbean.Weather;
 import com.mao.maoweather.util.HttpUtils;
@@ -31,6 +35,7 @@ public class WeatherActivity extends AppCompatActivity {
 
     private static final String WEATHER_SERVER_URL="http://guolin.tech/api/weather?cityid=";
     private static final String WEATHER_SERVER_KEY="&key=396c11bdaab347988bb0b79d1797e27c";
+    private static final String BING_IMAGE_URL="http://guolin.tech/api/bing_pic";
     private ScrollView sv_weather_layout;
     //天气标题
     private TextView tv_title_city;
@@ -47,14 +52,39 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView tv_suggestion_comfort;
     private TextView tv_suggestion_carwash;
     private TextView tv_suggestion_sport;
+
+    private ImageView iv_bing_pic;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        if(Build.VERSION.SDK_INT>=21){
+           /* View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(  View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+                    | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);*/
+            View decorView = getWindow().getDecorView();
+            int option = View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+            decorView.setSystemUiVisibility(option);
+            getWindow().setNavigationBarColor(Color.TRANSPARENT);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
         setContentView(R.layout.activity_weather);
         initView();
         //获取SharedPreferences中的数据，如果有，则直接加载，没有则请求服务器获取数据
         SharedPreferences sp= PreferenceManager.getDefaultSharedPreferences(this);
+        String bing_pic = sp.getString("bing_pic", null);
         String weatherStr = sp.getString("weather", null);
+        if(bing_pic!=null){
+            Glide.with(this).load(bing_pic).into(iv_bing_pic);//有缓存直接显示图片
+        }else {
+            loadbingImage();//没有缓存则网络加载图片
+        }
         if(weatherStr!=null){
             //直接解析
             Weather weather = MyUtils.handleWeatherResponse(weatherStr);
@@ -69,6 +99,39 @@ public class WeatherActivity extends AppCompatActivity {
         }
 
     }
+
+    private void loadbingImage() {
+            HttpUtils.sendOkHttpRquest(BING_IMAGE_URL, new Callback() {
+                @Override
+                public void onFailure(Call call, IOException e) {
+                    e.printStackTrace();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(getApplicationContext(),"加载背景图失败",Toast.LENGTH_SHORT).show();
+                        }
+                    });
+                }
+
+                @Override
+                public void onResponse(Call call, Response response) throws IOException {
+                    final String bingImage = response.body().string();
+                    //缓存图片
+                    SharedPreferences.Editor editor=PreferenceManager.
+                            getDefaultSharedPreferences(WeatherActivity.this).edit();
+                    editor.putString("bing_pic",bingImage);
+                    editor.apply();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            //显示加载的图片
+                            Glide.with(WeatherActivity.this).load(bingImage).into(iv_bing_pic);
+                        }
+                    });
+                }
+            });
+    }
+
     //请求服务器获取天气数据
     private void requestWeatherServer(String weatherId) {
         //请求地址
@@ -103,6 +166,7 @@ public class WeatherActivity extends AppCompatActivity {
                 });
             }
         });
+        loadbingImage();//加载图片
     }
 
     //显示Weather实体类中的天气信息
@@ -147,5 +211,6 @@ public class WeatherActivity extends AppCompatActivity {
         tv_suggestion_comfort= (TextView) findViewById(R.id.tv_suggestion_comfort);
         tv_suggestion_carwash= (TextView) findViewById(R.id.tv_suggestion_carwash);
         tv_suggestion_sport= (TextView) findViewById(R.id.tv_suggestion_sport);
+        iv_bing_pic= (ImageView) findViewById(R.id.iv_bing_pic);
     }
 }
